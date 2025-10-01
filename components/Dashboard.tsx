@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View } from '../types';
+import { View, DashboardStats } from '../types';
 import { UserIcon, UsersIcon, ShareIcon, ExclamationIcon } from './icons';
 import PersonalFilesView from './views/PersonalFilesView';
 import FamilyFilesView from './views/FamilyFilesView';
@@ -11,15 +11,8 @@ interface DashboardProps {
     onLogout: () => void;
 }
 
-interface Stats {
-    personal: { total: number; weekly: number };
-    family: { total: number; weekly: number };
-    referral: { total: number; weekly: number };
-    emergency: { total: number; weekly: number };
-}
-
 const DashboardContent: React.FC = () => {
-    const [stats, setStats] = useState<Stats | null>(null);
+    const [stats, setStats] = useState<DashboardStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -28,7 +21,16 @@ const DashboardContent: React.FC = () => {
             setIsLoading(true);
             setError(null);
             try {
-                const response = await fetch(`${API_BASE_URL}/api/stats`);
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    throw new Error('No authentication token found');
+                }
+
+                const response = await fetch(`${API_BASE_URL}/api/stats`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
                 if (!response.ok) {
                     throw new Error('Failed to fetch stats');
                 }
@@ -56,16 +58,56 @@ const DashboardContent: React.FC = () => {
             <h2 className="text-3xl font-bold text-gray-800">Dashboard</h2>
             <p className="mt-1 text-gray-600">Overview of all registered files.</p>
             <div className="grid grid-cols-1 gap-6 mt-8 sm:grid-cols-2 lg:grid-cols-4">
-                <StatCard title="Personal Files" total={stats.personal.total} weekly={stats.personal.weekly} icon={<UserIcon className="w-8 h-8" />} color="text-blue-500" />
-                <StatCard title="Family Files" total={stats.family.total} weekly={stats.family.weekly} icon={<UsersIcon className="w-8 h-8" />} color="text-green-500" />
-                <StatCard title="Referral Files" total={stats.referral.total} weekly={stats.referral.weekly} icon={<ShareIcon className="w-8 h-8" />} color="text-purple-500" />
-                <StatCard title="Emergency Files" total={stats.emergency.total} weekly={stats.emergency.weekly} icon={<ExclamationIcon className="w-8 h-8" />} color="text-red-500" />
+                <StatCard 
+                    title="Personal Files" 
+                    total={stats.personal.total} 
+                    weekly={stats.personal.weekly} 
+                    active={stats.personal.active}
+                    expired={stats.personal.expired}
+                    icon={<UserIcon className="w-8 h-8" />} 
+                    color="text-blue-500" 
+                />
+                <StatCard 
+                    title="Family Files" 
+                    total={stats.family.total} 
+                    weekly={stats.family.weekly} 
+                    active={stats.family.active}
+                    expired={stats.family.expired}
+                    icon={<UsersIcon className="w-8 h-8" />} 
+                    color="text-green-500" 
+                />
+                <StatCard 
+                    title="Referral Files" 
+                    total={stats.referral.total} 
+                    weekly={stats.referral.weekly} 
+                    active={stats.referral.active}
+                    expired={stats.referral.expired}
+                    icon={<ShareIcon className="w-8 h-8" />} 
+                    color="text-purple-500" 
+                />
+                <StatCard 
+                    title="Emergency Files" 
+                    total={stats.emergency.total} 
+                    weekly={stats.emergency.weekly} 
+                    active={stats.emergency.active}
+                    expired={stats.emergency.expired}
+                    icon={<ExclamationIcon className="w-8 h-8" />} 
+                    color="text-red-500" 
+                />
             </div>
         </div>
     );
 };
 
-const StatCard: React.FC<{ title: string; total: number; weekly: number; icon: React.ReactNode; color: string }> = ({ title, total, weekly, icon, color }) => (
+const StatCard: React.FC<{ 
+    title: string; 
+    total: number; 
+    weekly: number; 
+    active: number;
+    expired: number;
+    icon: React.ReactNode; 
+    color: string 
+}> = ({ title, total, weekly, active, expired, icon, color }) => (
     <div className="p-6 bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow">
         <div className={`p-3 bg-gray-100 rounded-full w-max ${color}`}>
             {icon}
@@ -73,7 +115,17 @@ const StatCard: React.FC<{ title: string; total: number; weekly: number; icon: R
         <div className="mt-4">
             <p className="text-sm font-medium text-gray-500">{title}</p>
             <p className="text-3xl font-bold text-gray-900">{total}</p>
-            <p className="mt-1 text-xs text-green-600">
+            <div className="mt-2 grid grid-cols-2 gap-2">
+                <div className="text-center p-2 bg-green-50 rounded">
+                    <p className="text-xs font-medium text-green-800">Active</p>
+                    <p className="text-lg font-semibold text-green-600">{active}</p>
+                </div>
+                <div className="text-center p-2 bg-red-50 rounded">
+                    <p className="text-xs font-medium text-red-800">Expired</p>
+                    <p className="text-lg font-semibold text-red-600">{expired}</p>
+                </div>
+            </div>
+            <p className="mt-2 text-xs text-green-600">
                 <span className="font-semibold">+{weekly}</span> this week
             </p>
         </div>

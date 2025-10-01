@@ -13,6 +13,8 @@ const ReferralFileModal: React.FC<ReferralFileModalProps> = ({ isOpen, onClose, 
   const [formData, setFormData] = useState<NewReferralFile>({
     referralName: '',
     patientCount: 0,
+    registrationDate: new Date().toISOString().split('T')[0],
+    expiryDate: new Date(new Date().setFullYear(new Date().getFullYear() + 5)).toISOString().split('T')[0]
   });
 
   useEffect(() => {
@@ -20,9 +22,16 @@ const ReferralFileModal: React.FC<ReferralFileModalProps> = ({ isOpen, onClose, 
       setFormData({
         referralName: fileToEdit.referralName,
         patientCount: fileToEdit.patientCount,
+        registrationDate: fileToEdit.registrationDate,
+        expiryDate: fileToEdit.expiryDate
       });
     } else {
-      setFormData({ referralName: '', patientCount: 0 });
+      setFormData({
+        referralName: '', 
+        patientCount: 0,
+        registrationDate: new Date().toISOString().split('T')[0],
+        expiryDate: new Date(new Date().setFullYear(new Date().getFullYear() + 5)).toISOString().split('T')[0]
+      });
     }
   }, [fileToEdit, isOpen]);
 
@@ -36,9 +45,18 @@ const ReferralFileModal: React.FC<ReferralFileModalProps> = ({ isOpen, onClose, 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (fileToEdit) {
-      onSave({ ...formData, id: fileToEdit.id, registrationDate: fileToEdit.registrationDate, expiryDate: fileToEdit.expiryDate });
+      onSave({
+        ...formData,
+        id: fileToEdit.id,
+        registrationDate: formData.registrationDate ? new Date(formData.registrationDate).toISOString().slice(0, 19).replace('T', ' ') : fileToEdit.registrationDate,
+        expiryDate: formData.expiryDate ? new Date(formData.expiryDate).toISOString().slice(0, 19).replace('T', ' ') : fileToEdit.expiryDate
+      });
     } else {
-      onSave(formData);
+      onSave({
+        ...formData,
+        registrationDate: new Date(formData.registrationDate).toISOString().slice(0, 19).replace('T', ' '),
+        expiryDate: new Date(formData.expiryDate).toISOString().slice(0, 19).replace('T', ' ')
+      });
     }
   };
 
@@ -60,6 +78,28 @@ const ReferralFileModal: React.FC<ReferralFileModalProps> = ({ isOpen, onClose, 
             <div>
               <label htmlFor="patientCount" className="block text-sm font-medium text-gray-700">Patients Referred</label>
               <input type="number" name="patientCount" id="patientCount" value={formData.patientCount} onChange={handleChange} required min="0" className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sjmc-blue-light focus:border-sjmc-blue-light sm:text-sm"/>
+            </div>
+            <div>
+              <label htmlFor="registrationDate" className="block text-sm font-medium text-gray-700">Registration Date</label>
+              <input 
+                type="date" 
+                name="registrationDate" 
+                id="registrationDate" 
+                value={formData.registrationDate?.split('T')[0]} 
+                onChange={handleChange}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sjmc-blue-light focus:border-sjmc-blue-light sm:text-sm"
+              />
+            </div>
+            <div>
+              <label htmlFor="expiryDate" className="block text-sm font-medium text-gray-700">Expiry Date</label>
+              <input 
+                type="date" 
+                name="expiryDate" 
+                id="expiryDate" 
+                value={formData.expiryDate?.split('T')[0]} 
+                onChange={handleChange}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sjmc-blue-light focus:border-sjmc-blue-light sm:text-sm"
+              />
             </div>
           </div>
           <div className="mt-6 flex justify-end space-x-3">

@@ -4,7 +4,7 @@ import FileTable from '../FileTable';
 import PersonalFileModal from '../modals/PersonalFileModal';
 import { SearchIcon, PlusIcon } from '../icons';
 import { format, isBefore } from 'date-fns';
-import parseISO from 'date-fns/parseISO';
+import { parseISO } from 'date-fns';
 import { API_BASE_URL } from '../../config';
 
 const PersonalFilesView: React.FC = () => {
@@ -17,6 +17,23 @@ const PersonalFilesView: React.FC = () => {
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [fileToEdit, setFileToEdit] = useState<PersonalFile | null>(null);
+
+  const handleUpdate = async (updatedFile: PersonalFile) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/personal/${updatedFile.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedFile),
+      });
+
+      if (!response.ok) throw new Error('Failed to update file');
+      await fetchFiles(); // Refresh the list after update
+    } catch (err: any) {
+      setError(err.message || 'An error occurred while updating the file');
+    }
+  };
 
   const fetchFiles = useCallback(async () => {
     setIsLoading(true);

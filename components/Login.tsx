@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { API_BASE_URL } from '../config';
 
 interface LoginProps {
-  onLogin: () => void;
+  onLogin: (token: string) => void;
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
@@ -28,7 +28,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        onLogin();
+        onLogin(data.token);
       } else {
         setError(data.message || 'Invalid credentials. Please try again.');
       }

@@ -133,14 +133,32 @@ export const db = {
             return newFile;
         },
         update: async (id: string, data: Partial<NewPersonalFile>): Promise<PersonalFile | null> => {
-            const { name, age, gender } = data;
-            const sql = 'UPDATE personal_files SET name = ?, age = ?, gender = ? WHERE id = ?';
-            const [result] = await getPool().execute(sql, [name, age, gender, id]);
+            console.log('Updating database with data:', data);
+            
+            // Build dynamic SQL query based on provided fields
+            const updates: string[] = [];
+            const values: any[] = [];
+            
+            if (data.name !== undefined) { updates.push('name = ?'); values.push(data.name); }
+            if (data.age !== undefined) { updates.push('age = ?'); values.push(data.age); }
+            if (data.gender !== undefined) { updates.push('gender = ?'); values.push(data.gender); }
+            if (data.registrationDate !== undefined) { updates.push('registrationDate = ?'); values.push(data.registrationDate); }
+            if (data.expiryDate !== undefined) { updates.push('expiryDate = ?'); values.push(data.expiryDate); }
+            
+            // Add id to values array
+            values.push(id);
+            
+            const sql = `UPDATE personal_files SET ${updates.join(', ')} WHERE id = ?`;
+            console.log('Executing SQL:', sql, 'with values:', values);
+            
+            const [result] = await getPool().execute(sql, values);
             
             if ((result as mysql.OkPacket).affectedRows === 0) return null;
             
             const [updatedRows] = await getPool().query('SELECT * FROM personal_files WHERE id = ?', [id]);
-            return (updatedRows as PersonalFile[])[0] || null;
+            const updatedFile = (updatedRows as PersonalFile[])[0] || null;
+            console.log('Updated file:', updatedFile);
+            return updatedFile;
         },
         delete: async (id: string): Promise<{ success: boolean }> => {
             const sql = 'DELETE FROM personal_files WHERE id = ?';
@@ -165,9 +183,24 @@ export const db = {
             return newFile;
         },
         update: async (id: string, data: Partial<NewFamilyFile>): Promise<FamilyFile | null> => {
-            const sql = 'UPDATE family_files SET headName = ?, memberCount = ? WHERE id = ?';
-            const [result] = await getPool().execute(sql, [data.headName, data.memberCount, id]);
+            // Build dynamic SQL query based on provided fields
+            const updates: string[] = [];
+            const values: any[] = [];
+            
+            if (data.headName !== undefined) { updates.push('headName = ?'); values.push(data.headName); }
+            if (data.memberCount !== undefined) { updates.push('memberCount = ?'); values.push(data.memberCount); }
+            if (data.registrationDate !== undefined) { updates.push('registrationDate = ?'); values.push(data.registrationDate); }
+            if (data.expiryDate !== undefined) { updates.push('expiryDate = ?'); values.push(data.expiryDate); }
+            
+            // Add id to values array
+            values.push(id);
+            
+            const sql = `UPDATE family_files SET ${updates.join(', ')} WHERE id = ?`;
+            console.log('Executing SQL:', sql, 'with values:', values);
+            
+            const [result] = await getPool().execute(sql, values);
             if ((result as mysql.OkPacket).affectedRows === 0) return null;
+            
             const [updatedRows] = await getPool().query('SELECT * FROM family_files WHERE id = ?', [id]);
             return (updatedRows as FamilyFile[])[0] || null;
         },
@@ -193,9 +226,24 @@ export const db = {
             return newFile;
         },
         update: async (id: string, data: Partial<NewReferralFile>): Promise<ReferralFile | null> => {
-            const sql = 'UPDATE referral_files SET referralName = ?, patientCount = ? WHERE id = ?';
-            const [result] = await getPool().execute(sql, [data.referralName, data.patientCount, id]);
+            // Build dynamic SQL query based on provided fields
+            const updates: string[] = [];
+            const values: any[] = [];
+            
+            if (data.referralName !== undefined) { updates.push('referralName = ?'); values.push(data.referralName); }
+            if (data.patientCount !== undefined) { updates.push('patientCount = ?'); values.push(data.patientCount); }
+            if (data.registrationDate !== undefined) { updates.push('registrationDate = ?'); values.push(data.registrationDate); }
+            if (data.expiryDate !== undefined) { updates.push('expiryDate = ?'); values.push(data.expiryDate); }
+            
+            // Add id to values array
+            values.push(id);
+            
+            const sql = `UPDATE referral_files SET ${updates.join(', ')} WHERE id = ?`;
+            console.log('Executing SQL:', sql, 'with values:', values);
+            
+            const [result] = await getPool().execute(sql, values);
             if ((result as mysql.OkPacket).affectedRows === 0) return null;
+            
             const [updatedRows] = await getPool().query('SELECT * FROM referral_files WHERE id = ?', [id]);
             return (updatedRows as ReferralFile[])[0] || null;
         },
@@ -233,27 +281,61 @@ export const db = {
         },
     },
     getStats: async () => {
-        const oneWeekAgo = new Date();
+        const now = new Date();
+        const oneWeekAgo = new Date(now);
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
         const oneWeekAgoStr = toMySQLDateTime(oneWeekAgo);
+        const nowStr = toMySQLDateTime(now);
 
+        // Personal Files Stats
         const [personalTotal] = await getPool().query('SELECT COUNT(*) as total FROM personal_files');
         const [personalWeekly] = await getPool().query('SELECT COUNT(*) as weekly FROM personal_files WHERE registrationDate >= ?', [oneWeekAgoStr]);
+        const [personalExpired] = await getPool().query('SELECT COUNT(*) as expired FROM personal_files WHERE expiryDate < ?', [nowStr]);
+        const [personalActive] = await getPool().query('SELECT COUNT(*) as active FROM personal_files WHERE expiryDate >= ?', [nowStr]);
 
+        // Family Files Stats
         const [familyTotal] = await getPool().query('SELECT COUNT(*) as total FROM family_files');
         const [familyWeekly] = await getPool().query('SELECT COUNT(*) as weekly FROM family_files WHERE registrationDate >= ?', [oneWeekAgoStr]);
+        const [familyExpired] = await getPool().query('SELECT COUNT(*) as expired FROM family_files WHERE expiryDate < ?', [nowStr]);
+        const [familyActive] = await getPool().query('SELECT COUNT(*) as active FROM family_files WHERE expiryDate >= ?', [nowStr]);
         
+        // Referral Files Stats
         const [referralTotal] = await getPool().query('SELECT COUNT(*) as total FROM referral_files');
         const [referralWeekly] = await getPool().query('SELECT COUNT(*) as weekly FROM referral_files WHERE registrationDate >= ?', [oneWeekAgoStr]);
+        const [referralExpired] = await getPool().query('SELECT COUNT(*) as expired FROM referral_files WHERE expiryDate < ?', [nowStr]);
+        const [referralActive] = await getPool().query('SELECT COUNT(*) as active FROM referral_files WHERE expiryDate >= ?', [nowStr]);
 
+        // Emergency Files Stats
         const [emergencyTotal] = await getPool().query('SELECT COUNT(*) as total FROM emergency_files');
         const [emergencyWeekly] = await getPool().query('SELECT COUNT(*) as weekly FROM emergency_files WHERE registrationDate >= ?', [oneWeekAgoStr]);
+        const [emergencyExpired] = await getPool().query('SELECT COUNT(*) as expired FROM emergency_files WHERE expiryDate < ?', [nowStr]);
+        const [emergencyActive] = await getPool().query('SELECT COUNT(*) as active FROM emergency_files WHERE expiryDate >= ?', [nowStr]);
 
         return {
-            personal: { total: (personalTotal as any)[0].total, weekly: (personalWeekly as any)[0].weekly },
-            family: { total: (familyTotal as any)[0].total, weekly: (familyWeekly as any)[0].weekly },
-            referral: { total: (referralTotal as any)[0].total, weekly: (referralWeekly as any)[0].weekly },
-            emergency: { total: (emergencyTotal as any)[0].total, weekly: (emergencyWeekly as any)[0].weekly },
+            personal: { 
+                total: (personalTotal as any)[0].total, 
+                weekly: (personalWeekly as any)[0].weekly,
+                expired: (personalExpired as any)[0].expired,
+                active: (personalActive as any)[0].active
+            },
+            family: { 
+                total: (familyTotal as any)[0].total, 
+                weekly: (familyWeekly as any)[0].weekly,
+                expired: (familyExpired as any)[0].expired,
+                active: (familyActive as any)[0].active
+            },
+            referral: { 
+                total: (referralTotal as any)[0].total, 
+                weekly: (referralWeekly as any)[0].weekly,
+                expired: (referralExpired as any)[0].expired,
+                active: (referralActive as any)[0].active
+            },
+            emergency: { 
+                total: (emergencyTotal as any)[0].total, 
+                weekly: (emergencyWeekly as any)[0].weekly,
+                expired: (emergencyExpired as any)[0].expired,
+                active: (emergencyActive as any)[0].active
+            }
         };
     }
 };

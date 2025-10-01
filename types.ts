@@ -17,7 +17,7 @@ export interface PersonalFile {
   registrationDate: string;
   expiryDate: string;
 }
-export type NewPersonalFile = Omit<PersonalFile, 'id' | 'registrationDate' | 'expiryDate'>;
+export type NewPersonalFile = Omit<PersonalFile, 'id'> & { registrationDate?: string; expiryDate?: string; };
 
 export interface FamilyFile {
   id: string;
@@ -26,7 +26,7 @@ export interface FamilyFile {
   registrationDate: string;
   expiryDate: string;
 }
-export type NewFamilyFile = Omit<FamilyFile, 'id' | 'registrationDate' | 'expiryDate'>;
+export type NewFamilyFile = Omit<FamilyFile, 'id'> & { registrationDate?: string; expiryDate?: string; };
 
 
 export interface ReferralFile {
@@ -36,7 +36,7 @@ export interface ReferralFile {
   registrationDate: string;
   expiryDate: string;
 }
-export type NewReferralFile = Omit<ReferralFile, 'id' | 'registrationDate' | 'expiryDate'>;
+export type NewReferralFile = Omit<ReferralFile, 'id'> & { registrationDate?: string; expiryDate?: string; };
 
 
 export type EmergencyFile = PersonalFile;
@@ -44,6 +44,20 @@ export type NewEmergencyFile = NewPersonalFile;
 
 
 export type AnyFile = PersonalFile | FamilyFile | ReferralFile | EmergencyFile;
+
+export interface FileStats {
+  total: number;
+  weekly: number;
+  active: number;
+  expired: number;
+}
+
+export interface DashboardStats {
+  personal: FileStats;
+  family: FileStats;
+  referral: FileStats;
+  emergency: FileStats;
+}
 
 export enum View {
     Dashboard = 'Dashboard',
